@@ -1,0 +1,24 @@
+{
+  "3": {
+    "mockOracle": "a",
+    "marginVault": "",
+    "marginCalculator": "",
+    "vToken": "",
+    "addressBook": "",
+    "whitelist": "",
+    "marginPool": "",
+    "vTokenFactory": "",
+    "controller": ""
+  },
+  "1337": {
+    "mockOracle": "0xcf59195ade276767448398aa25dabb432e562e70",
+    "marginVault": "0x9ffba6742018766a8784dd9a46dbf9934ad40229",
+    "marginCalculator": "0xec9eb90c88a938e10f033ffc9b9dc556368b6056",
+    "vToken": "0x4160ae09378703abc510adc01a0b502f437b49d8",
+    "addressBook": "0xc10bad184bf21ad8a672c9f5e9da87bdb28c7956",
+    "whitelist": "0xccef14f25e9d44cf1c3f04f0eb2c4e1faa25a25a",
+    "marginPool": "0x59333cb06a42205eb6045c7f87c601c62977bb67",
+    "vTokenFactory": "0x184b8da97909a176cd20d4a105f52733f0303b79",
+    "controller": "0x0a91472e6d1a6eac8c89237e72de994a2451ceb1"
+  }
+}
