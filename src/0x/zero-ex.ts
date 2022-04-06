@@ -79,7 +79,7 @@ export class ZeroEx {
     const contract = side ? this.underlyingContract : this.strikeContract;
     const takerTokenFillAmount = side ? $(amount, this.underlyingDecimals) : $(amount, this.strikeDecimals);
 
-    const allowance = await contract.allowance(taker.address, this.exchangeProxy.address);
+    const allowance = await contract.allowance(await taker.getAddress(), this.exchangeProxy.address);
     if (allowance.lt(takerTokenFillAmount)) {
       await contract.connect(taker).approve(
         this.exchangeProxy.address,
@@ -112,7 +112,7 @@ export class ZeroEx {
     const makerAmount = $(Number(price) * Number(amount), this.strikeDecimals);
     const takerAmount = $(amount, this.underlyingDecimals);
 
-    const allowance = await this.strikeContract.allowance(maker.address, this.exchangeProxy.address);
+    const allowance = await this.strikeContract.allowance(await maker.getAddress(), this.exchangeProxy.address);
     if (allowance.lt(makerAmount)) {
       await this.strikeContract.connect(maker).approve(
         this.exchangeProxy.address,
@@ -130,7 +130,7 @@ export class ZeroEx {
       takerToken: this.underlyingContract.address,
       makerAmount,
       takerAmount,
-      maker: maker.address,
+      maker: await maker.getAddress(),
       taker: ZERO_ADDR,
       sender: ZERO_ADDR,
       expiry: String(expiry),
@@ -160,7 +160,7 @@ export class ZeroEx {
     const makerAmount = $(amount, this.underlyingDecimals);
     const takerAmount = $(Number(price) * Number(amount), this.strikeDecimals);
 
-    const allowance = await this.underlyingContract.allowance(maker.address, this.exchangeProxy.address);
+    const allowance = await this.underlyingContract.allowance(await maker.getAddress(), this.exchangeProxy.address);
     if (allowance.lt(makerAmount)) {
       await this.underlyingContract.connect(maker).approve(
         this.exchangeProxy.address,
@@ -178,7 +178,7 @@ export class ZeroEx {
       takerToken: this.strikeContract.address,
       makerAmount,
       takerAmount,
-      maker: maker.address,
+      maker: await maker.getAddress(),
       taker: ZERO_ADDR,
       sender: ZERO_ADDR,
       expiry: String(expiry),

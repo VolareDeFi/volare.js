@@ -40,5 +40,5 @@
     "build": "cross-env tsc",
     "clean": "rm -rf dist build"
   },
-  "version": "1.2.2"
+  "version": "1.2.3"
 }
