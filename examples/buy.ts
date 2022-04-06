@@ -6,9 +6,9 @@
 
 import { config } from 'dotenv';
 import { providers, Wallet } from 'ethers';
-import { getFutureExpiryInSeconds } from '@volare.defi/utils.js';
+import { ChainId, getFutureExpiryInSeconds } from '@volare.defi/utils.js';
 
-import { ZeroEx, ChainId, getContractAddressesForChain } from '../src';
+import { ZeroEx, getContractAddressesForChain } from '../src';
 
 config({
   path: '.env',
@@ -38,6 +38,16 @@ const taker = new Wallet(TAKER_PRIVATE_KEY, provider);
   await zeroEx.init();
 
   const order = await zeroEx.buy(maker, 0.01, 300.0, getFutureExpiryInSeconds(3600));
+  const orderHash2 = order.limitOrder.getHash();
+  console.log(orderHash2);
+  const {
+    orderHash,
+    isSignatureValid,
+    status,
+    actualFillableTakerTokenAmount,
+  } = await zeroEx.getLimitOrderRelevantState(order);
+  console.log(orderHash, isSignatureValid, status, actualFillableTakerTokenAmount);
+  console.log(orderHash === orderHash2);
   const tx = await zeroEx.fill(taker, order, 0.01);
   console.log(tx.hash);
 })();

@@ -4,10 +4,9 @@
     "url": "https://github.com/VolareDeFi/volare.js/issues"
   },
   "dependencies": {
-    "@0x/contract-wrappers": "^13.20.0",
-    "@0x/protocol-utils": "^1.11.2",
-    "@0x/utils": "^6.5.3",
-    "@volare.defi/utils.js": "^2.2.0",
+    "@ethersproject/abstract-signer": "^5.6.0",
+    "@ethersproject/hash": "^5.6.0",
+    "@volare.defi/utils.js": "^2.3.1",
     "bignumber.js": "^9.0.2",
     "ethers": "^5.6.2"
   },
@@ -41,5 +40,5 @@
     "build": "cross-env tsc",
     "clean": "rm -rf dist build"
   },
-  "version": "1.1.0"
+  "version": "1.2.2"
 }

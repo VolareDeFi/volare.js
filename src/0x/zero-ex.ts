@@ -5,10 +5,17 @@
  */
 
 import { providers, Transaction, Wallet, Contract } from 'ethers';
-import { BigNumber } from '@0x/utils';
-import { LimitOrder, Signature, SignatureType } from '@0x/protocol-utils';
-import { IZeroExContract } from '@0x/contract-wrappers';
-import { ZERO_ADDR, UNLIMITED_ALLOWANCE_IN_BASE_UNITS, TX_DEFAULTS, _$, $, ERC20Contract } from '@volare.defi/utils.js';
+import {
+  ONE_BYTES32,
+  ZERO_ADDR,
+  ZERO,
+  TX_DEFAULTS,
+  $,
+  ERC20Contract,
+  IZeroExContract,
+} from '@volare.defi/utils.js';
+
+import { SignatureType, LimitOrder, OrderInfo, Order } from './orders';
 
 export interface Options {
   chainId: number;
@@ -16,12 +23,6 @@ export interface Options {
   verifyingContract: string;
   underlyingToken: string;
   strikeToken: string;
-}
-
-export interface Order {
-  orderHash: string;
-  limitOrder: LimitOrder;
-  signature: Signature;
 }
 
 export class ZeroEx {
@@ -51,14 +52,14 @@ export class ZeroEx {
     return this.exchangeProxy.getProtocolFeeMultiplier();
   }
 
-  async getLimitOrderRelevantState(order: Order): Promise<any> {
+  async getLimitOrderRelevantState(order: Order): Promise<OrderInfo> {
     const [{ orderHash, status }, actualFillableTakerTokenAmount, isSignatureValid] =
       await this.exchangeProxy.getLimitOrderRelevantState(order.limitOrder, order.signature);
     return {
       orderHash,
       isSignatureValid,
       status,
-      actualFillableTakerTokenAmount,
+      actualFillableTakerTokenAmount: actualFillableTakerTokenAmount.toString()
     };
   }
 
@@ -69,14 +70,7 @@ export class ZeroEx {
    * @returns
    */
   async fill(taker: Wallet, order: Order, amount: number | string): Promise<Transaction> {
-    const limitOrder = {
-      ...order.limitOrder,
-      makerAmount: order.limitOrder.makerAmount.toString(10),
-      takerAmount: order.limitOrder.takerAmount.toString(10),
-      expiry: order.limitOrder.expiry.toString(10),
-      takerTokenFeeAmount: order.limitOrder.takerTokenFeeAmount.toString(10),
-      salt: order.limitOrder.salt.toString(10),
-    };
+    const limitOrder = order.limitOrder;
 
     // side:
     // true -> underlying
@@ -89,7 +83,7 @@ export class ZeroEx {
     if (allowance.lt(takerTokenFillAmount)) {
       await contract.connect(taker).approve(
         this.exchangeProxy.address,
-        UNLIMITED_ALLOWANCE_IN_BASE_UNITS,
+        ONE_BYTES32,
         {
           ...TX_DEFAULTS,
         },
@@ -115,14 +109,14 @@ export class ZeroEx {
    * @returns
    */
   async buy(maker: Wallet, amount: number | string, price: number | string, expiry: number | string): Promise<Order> {
-    const makerAmount = _$(Number(price) * Number(amount), this.strikeDecimals);
-    const takerAmount = _$(amount, this.underlyingDecimals);
+    const makerAmount = $(Number(price) * Number(amount), this.strikeDecimals);
+    const takerAmount = $(amount, this.underlyingDecimals);
 
     const allowance = await this.strikeContract.allowance(maker.address, this.exchangeProxy.address);
-    if (allowance.lt(makerAmount.toString(10))) {
+    if (allowance.lt(makerAmount)) {
       await this.strikeContract.connect(maker).approve(
         this.exchangeProxy.address,
-        UNLIMITED_ALLOWANCE_IN_BASE_UNITS,
+        ONE_BYTES32,
         {
           ...TX_DEFAULTS,
         },
@@ -139,13 +133,13 @@ export class ZeroEx {
       maker: maker.address,
       taker: ZERO_ADDR,
       sender: ZERO_ADDR,
-      expiry: new BigNumber(expiry),
-      salt: new BigNumber(Date.now()),
-      takerTokenFeeAmount: new BigNumber(0),
+      expiry: String(expiry),
+      salt: Date.now().toString(),
+      takerTokenFeeAmount: ZERO,
     });
     const signature = await limitOrder.getSignatureWithKey(
-      maker.privateKey,
-      SignatureType.EIP712, // Optional
+      maker,
+      SignatureType.EIP712,
     );
 
     return {
@@ -163,14 +157,14 @@ export class ZeroEx {
    * @returns
    */
   async sell(maker: Wallet, amount: number | string, price: number | string, expiry: number | string): Promise<Order> {
-    const makerAmount = _$(amount, this.underlyingDecimals);
-    const takerAmount = _$(Number(price) * Number(amount), this.strikeDecimals);
+    const makerAmount = $(amount, this.underlyingDecimals);
+    const takerAmount = $(Number(price) * Number(amount), this.strikeDecimals);
 
     const allowance = await this.underlyingContract.allowance(maker.address, this.exchangeProxy.address);
-    if (allowance.lt(makerAmount.toString(10))) {
+    if (allowance.lt(makerAmount)) {
       await this.underlyingContract.connect(maker).approve(
         this.exchangeProxy.address,
-        UNLIMITED_ALLOWANCE_IN_BASE_UNITS,
+        ONE_BYTES32,
         {
           ...TX_DEFAULTS,
         },
@@ -187,13 +181,13 @@ export class ZeroEx {
       maker: maker.address,
       taker: ZERO_ADDR,
       sender: ZERO_ADDR,
-      expiry: new BigNumber(expiry),
-      salt: new BigNumber(Date.now()),
-      takerTokenFeeAmount: new BigNumber(0),
+      expiry: String(expiry),
+      salt: Date.now().toString(),
+      takerTokenFeeAmount: ZERO,
     });
     const signature = await limitOrder.getSignatureWithKey(
-      maker.privateKey,
-      SignatureType.EIP712, // Optional
+      maker,
+      SignatureType.EIP712,
     );
 
     return {

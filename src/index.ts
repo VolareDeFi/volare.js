@@ -4,7 +4,11 @@
  * @date 2022
  */
 
-export { ChainId } from '@0x/contract-addresses';
 export { getContractAddressesForChain } from './addresses';
-export { OrderStatus } from './0x/constants';
+export {
+  EIP712TypedData,
+  createExchangeProxyEIP712Domain,
+  getExchangeProxyEIP712DomainHash,
+  getExchangeProxyEIP712Hash,
+} from './0x/eip712';
 export { ZeroEx } from './0x/zero-ex';

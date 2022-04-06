@@ -6,9 +6,9 @@
 
 import { config } from 'dotenv';
 import { providers, Wallet } from 'ethers';
-import { getFutureExpiryInSeconds } from '@volare.defi/utils.js';
+import { ChainId, getFutureExpiryInSeconds } from '@volare.defi/utils.js';
 
-import {ChainId, getContractAddressesForChain, ZeroEx} from '../src';
+import { getContractAddressesForChain, ZeroEx} from '../src';
 
 config({
   path: '.env',
