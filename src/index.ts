@@ -4,11 +4,9 @@
  * @date 2022
  */
 
+export { ERC20, Premium, Collateral, Product, VToken } from './interfaces';
+export { getDecimals } from './cache';
 export { getContractAddressesForChain } from './addresses';
-export {
-  EIP712TypedData,
-  createExchangeProxyEIP712Domain,
-  getExchangeProxyEIP712DomainHash,
-  getExchangeProxyEIP712Hash,
-} from './0x/eip712';
-export { ZeroEx } from './0x/zero-ex';
+export { ZeroExOptions, ZeroEx } from './0x';
+export { VolareOptions, Volare } from './volare';
+export { Options as ApisOptions, Apis } from './apis';

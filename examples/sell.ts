@@ -8,7 +8,7 @@ import { config } from 'dotenv';
 import { providers, Wallet } from 'ethers';
 import { ChainId, getFutureExpiryInSeconds } from '@volare.defi/utils.js';
 
-import { getContractAddressesForChain, ZeroEx} from '../src';
+import { getContractAddressesForChain, ZeroEx } from '../src';
 
 config({
   path: '.env',
@@ -30,9 +30,9 @@ const taker = new Wallet(TAKER_PRIVATE_KEY, provider);
   const zeroEx = new ZeroEx({
     chainId: CHAIN_ID,
     endpoint: ENDPOINT,
-    verifyingContract: addresses.exchangeProxy,
-    underlyingToken: addresses.weth,
-    strikeToken: addresses.dai,
+    addresses,
+    vTokenAddress: addresses.weth,
+    premiumAddress: addresses.dai,
   });
 
   await zeroEx.init();

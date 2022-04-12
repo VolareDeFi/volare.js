@@ -4,9 +4,11 @@
  * @date 2022
  */
 
+
 import { TypedDataDomain, TypedDataField } from '@ethersproject/abstract-signer';
 import { _TypedDataEncoder } from '@ethersproject/hash';
 import { ZERO_ADDR } from '@volare.defi/utils.js';
+
 
 export interface EIP712TypedData {
   domain: TypedDataDomain;

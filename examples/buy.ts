@@ -30,9 +30,9 @@ const taker = new Wallet(TAKER_PRIVATE_KEY, provider);
   const zeroEx = new ZeroEx({
     chainId: CHAIN_ID,
     endpoint: ENDPOINT,
-    verifyingContract: addresses.exchangeProxy,
-    underlyingToken: addresses.weth,
-    strikeToken: addresses.dai,
+    addresses,
+    vTokenAddress: addresses.weth,
+    premiumAddress: addresses.dai,
   });
 
   await zeroEx.init();
