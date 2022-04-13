@@ -4,6 +4,13 @@
  * @date 2022
  */
 
+export interface Price {
+  timestamp: number;
+  name: string;
+  price: string;
+  changed: string;
+}
+
 export interface ERC20 {
   address: string;
   name: string;
@@ -11,13 +18,6 @@ export interface ERC20 {
   decimals: number;
   totalSupply: string;
   logo: string;
-}
-
-export interface Price {
-  timestamp: number;
-  name: string;
-  price: string;
-  changed: string;
 }
 
 export interface Premium extends ERC20 {}

@@ -5,10 +5,8 @@
  */
 
 import { config } from 'dotenv';
-import { BigNumber, ChainId } from '@volare.defi/utils.js';
+import { ChainId } from '@volare.defi/utils.js';
 import { getContractAddressesForChain, Apis } from '../src';
-
-BigNumber.config({ DECIMAL_PLACES: 2 });
 
 config({
   path: '.env',
@@ -23,6 +21,7 @@ const addresses = getContractAddressesForChain(CHAIN_ID);
 
 (async () => {
   const apis = new Apis({
+    config: { DECIMAL_PLACES: 2 },
     url: URL,
     chainId: CHAIN_ID,
     endpoint: ENDPOINT,
@@ -39,10 +38,14 @@ const addresses = getContractAddressesForChain(CHAIN_ID);
   console.log(products);
 
   for (let i = 0; i < products.length; i++) {
-    const prices = await apis.prices(products[i].productHash);
+    const hash = products[i].productHash;
+    const prices = await apis.prices(hash);
     console.log(prices);
 
-    const vTokens = await apis.vTokens(products[i].productHash);
+    const expires = await apis.expiry(hash);
+    console.log(expires);
+
+    const vTokens = await apis.vTokens(hash);
     console.log(vTokens);
   }
 })();

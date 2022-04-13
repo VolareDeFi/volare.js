@@ -7,7 +7,7 @@
 import axios, { Axios } from 'axios';
 import { providers } from 'ethers';
 import {
-  $int,
+  $float,
   BigNumber,
   VolareAddresses,
 } from '@volare.defi/utils.js';
@@ -25,10 +25,13 @@ import {
   CollateralUrl,
   ProductUrl,
   PriceUrl,
+  ExpiryUrl,
   VTokenUrl
 } from './url';
 
 export interface Options {
+  config?: BigNumber.Config;
+
   url: string;
   chainId: number;
   endpoint: string;
@@ -36,12 +39,18 @@ export interface Options {
 }
 
 export class Apis {
+  // format
+  config: BigNumber.Config;
+
   apis: Axios;
   chainId: number;
   provider: providers.JsonRpcProvider;
   addresses: any;
 
   constructor(options: Options) {
+    this.config = options.config || { DECIMAL_PLACES: 2 };
+    BigNumber.config(this.config);
+
     this.apis = axios.create({
       baseURL: options.url,
       headers: {
@@ -53,13 +62,21 @@ export class Apis {
     this.addresses = options.addresses;
   }
 
+  private toFixed(f: number | string): string {
+    return (new BigNumber(f)).toFixed(this.config.DECIMAL_PLACES as number);
+  }
+
+  private toPercent(p: number | string): string {
+    return (new BigNumber(p).div(10)).toFixed(this.config.DECIMAL_PLACES as number) + '%';
+  }
+
   async premiums(): Promise<Array<Premium>> {
     const response = await this.apis.post(
       PremiumUrl(this.addresses.controller),
     );
     const premiums = response.data as Array<Premium>;
     return premiums.map(premium => {
-      premium.totalSupply = $int(premium.totalSupply, premium.decimals);
+      premium.totalSupply = this.toFixed($float(premium.totalSupply, premium.decimals));
       return premium;
     });
   }
@@ -70,7 +87,7 @@ export class Apis {
     );
     const collaterals = response.data as Array<Collateral>;
     return collaterals.map(collateral => {
-      collateral.totalSupply = $int(collateral.totalSupply, collateral.decimals);
+      collateral.totalSupply = this.toFixed($float(collateral.totalSupply, collateral.decimals));
       return collateral;
     });
   }
@@ -88,15 +105,13 @@ export class Apis {
     if (withPrice) {
       return products.map(product => {
         product.underlying.totalSupply =
-          $int(product.underlying.totalSupply, product.underlying.decimals);
+          this.toFixed($float(product.underlying.totalSupply, product.underlying.decimals));
         product.strike.totalSupply =
-          $int(product.strike.totalSupply, product.strike.decimals);
+          this.toFixed($float(product.strike.totalSupply, product.strike.decimals));
         product.collateral.totalSupply =
-          $int(product.collateral.totalSupply, product.collateral.decimals);
-        product.underlyingPrice.price =
-          (new BigNumber(product.underlyingPrice.price)).toString(10);
-        product.underlyingPrice.changed =
-          (new BigNumber(product.underlyingPrice.changed).div(10)).toString(10) + '%';
+          this.toFixed($float(product.collateral.totalSupply, product.collateral.decimals));
+        product.underlyingPrice.price = this.toFixed(product.underlyingPrice.price);
+        product.underlyingPrice.changed = this.toPercent(product.underlyingPrice.changed);
         return product;
       });
     }
@@ -115,16 +130,23 @@ export class Apis {
       binance: Array<Price>,
     };
     prices.uniswap.map(price => {
-      price.price = (new BigNumber(price.price)).toString(10);
-      price.changed = (new BigNumber(price.changed).div(10)).toString(10) + '%';
+      price.price = this.toFixed(price.price)
+      price.changed = this.toPercent(price.changed);
       return price;
     });
     prices.binance.map(price => {
-      price.price = (new BigNumber(price.price)).toString(10);
-      price.changed = (new BigNumber(price.changed).div(10)).toString(10) + '%';
+      price.price = this.toFixed(price.price)
+      price.changed = this.toPercent(price.changed);
       return price;
     });
     return prices;
+  }
+
+  async expiry(hash: string): Promise<Array<number>> {
+    const response = await this.apis.post(
+      ExpiryUrl(hash),
+    );
+    return response.data;
   }
 
   /***
@@ -138,10 +160,12 @@ export class Apis {
     return await Promise.all(
       vTokens.map(
         async (vToken: VToken) => {
-          const decimals = await getDecimals(vToken.strike.toLowerCase(), this.provider);
-          vToken.strikePrice = $int(
-            vToken.strikePrice,
-            decimals,
+          const decimals = await getDecimals(vToken.strike, this.provider);
+          vToken.strikePrice = this.toFixed(
+            $float(
+              vToken.strikePrice,
+              decimals,
+            )
           );
           return vToken;
         }
