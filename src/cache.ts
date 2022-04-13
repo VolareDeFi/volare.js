@@ -19,3 +19,6 @@ export const getDecimals = async (address: string, provider: providers.JsonRpcPr
   }
   return decimals[address];
 }
+
+export const KeyPremium = 'premium';
+export const global: { [key: string]: any } = {};

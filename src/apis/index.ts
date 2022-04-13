@@ -12,7 +12,7 @@ import {
   VolareAddresses,
 } from '@volare.defi/utils.js';
 
-import { getDecimals } from '../cache';
+import { KeyPremium, global, getDecimals } from '../cache';
 import {
   Price,
   Premium,
@@ -70,15 +70,18 @@ export class Apis {
     return (new BigNumber(p).div(10)).toFixed(this.config.DECIMAL_PLACES as number) + '%';
   }
 
-  async premiums(): Promise<Array<Premium>> {
-    const response = await this.apis.post(
+  async premium(): Promise<Premium> {
+    if (global[KeyPremium]) return global[KeyPremium] as Premium;
+
+    const response = await this.apis.get(
       PremiumUrl(this.addresses.controller),
     );
-    const premiums = response.data as Array<Premium>;
-    return premiums.map(premium => {
-      premium.totalSupply = this.toFixed($float(premium.totalSupply, premium.decimals));
-      return premium;
-    });
+    const premium = response.data as Premium;
+    premium.totalSupply = this.toFixed($float(premium.totalSupply, premium.decimals));
+
+    global[KeyPremium] = premium;
+
+    return premium;
   }
 
   async collaterals(): Promise<Array<Collateral>> {
@@ -151,10 +154,32 @@ export class Apis {
 
   /***
    * @param hash The product hash.
+   * @param expiry
+   * @param address
+   * @param withStat
+   * @param withMarket
+   * @param withGreek
    */
-  async vTokens(hash: string): Promise<Array<VToken>> {
+  async vTokens(
+    hash: string,
+    expiry?: number,
+    address?: string,
+    withStat?: boolean,
+    withMarket?: boolean,
+    withGreek?: boolean,
+  ): Promise<Array<VToken>> {
     const response = await this.apis.post(
       VTokenUrl(hash),
+      null,
+      {
+        params: {
+          expiry,
+          address,
+          withStat,
+          withMarket,
+          withGreek,
+        },
+      },
     );
     const vTokens = response.data as Array<VToken>;
     return await Promise.all(
@@ -167,6 +192,49 @@ export class Apis {
               decimals,
             )
           );
+
+          // address
+          if (address) {
+            const position = vToken.position;
+            vToken.position = {
+              amount: this.toFixed($float(position.amount, vToken.decimals)),
+            };
+          }
+
+          // stat
+          if (withStat) {
+            const stat = vToken.stat;
+            vToken.stat = {
+              totalSupply: this.toFixed($float(stat.totalSupply, vToken.decimals)),
+              holder: stat.holder,
+            };
+          }
+
+          // market
+          if (withMarket) {
+            const premium = await this.premium();
+            const market = vToken.market;
+            vToken.market = {
+              changed: this.toPercent(market.changed),
+              volume: this.toFixed(market.volume),
+              bid1: this.toFixed($float(market.bid1, premium.decimals)),
+              bid1IV: this.toFixed(market.bid1IV),
+              ask1: this.toFixed($float(market.ask1, premium.decimals)),
+              ask1IV: this.toFixed(market.ask1IV),
+            };
+          }
+
+          // greek
+          if (withGreek) {
+            const greek = vToken.greek;
+            vToken.greek = {
+              delta: this.toFixed(greek.delta),
+              gamma: this.toFixed(greek.gamma),
+              theta: this.toFixed(greek.theta),
+              vega: this.toFixed(greek.vega),
+              rho: this.toFixed(greek.rho),
+            };
+          }
           return vToken;
         }
       )

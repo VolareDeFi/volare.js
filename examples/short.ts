@@ -37,12 +37,6 @@ const writer = new Wallet(WRITER_PRIVATE_KEY, provider);
     addresses: addresses as VolareAddresses,
   });
 
-  const premiums = await apis.premiums();
-  console.log(premiums);
-
-  const collaterals = await apis.collaterals();
-  console.log(collaterals);
-
   const products = await apis.products();
   console.log(products);
 

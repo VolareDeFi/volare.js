@@ -28,8 +28,8 @@ const addresses = getContractAddressesForChain(CHAIN_ID);
     addresses: addresses,
   });
 
-  const premiums = await apis.premiums();
-  console.log(premiums);
+  const premium = await apis.premium();
+  console.log(premium);
 
   const collaterals = await apis.collaterals();
   console.log(collaterals);
@@ -45,7 +45,13 @@ const addresses = getContractAddressesForChain(CHAIN_ID);
     const expires = await apis.expiry(hash);
     console.log(expires);
 
-    const vTokens = await apis.vTokens(hash);
-    console.log(vTokens);
+    // const vTokens = await apis.vTokens(hash);
+    // console.log(vTokens);
+
+    JSON.stringify('')
+    for (let j = 0; j < expires.length; j++) {
+      const vTokens = await apis.vTokens(hash, expires[j], undefined, true, true, true);
+      console.log(vTokens);
+    }
   }
 })();

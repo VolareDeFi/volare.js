@@ -48,4 +48,26 @@ export interface VToken {
   collateral: string;
   strikePrice: string;
   expiry: number;
+  position: {
+    amount: string;
+  }
+  stat: {
+    totalSupply: string;
+    holder: number;
+  };
+  market: {
+    changed: string;
+    volume: string;
+    bid1: string;
+    bid1IV: string;
+    ask1: string;
+    ask1IV: string;
+  }
+  greek: {
+    delta: string;
+    gamma: string;
+    theta: string;
+    vega: string;
+    rho: string;
+  };
 }
