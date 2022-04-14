@@ -24,9 +24,10 @@ import {
   PremiumUrl,
   CollateralUrl,
   ProductUrl,
-  PriceUrl,
-  ExpiryUrl,
-  VTokenUrl
+  ProductPriceUrl,
+  ProductExpiryUrl,
+  ProductVTokenUrl,
+  VTokenUrl,
 } from './url';
 
 export interface Options {
@@ -68,6 +69,66 @@ export class Apis {
 
   private toPercent(p: number | string): string {
     return (new BigNumber(p).div(10)).toFixed(this.config.DECIMAL_PLACES as number) + '%';
+  }
+
+  private async v(
+    vToken: VToken,
+    address?: string,
+    withStat?: boolean,
+    withMarket?: boolean,
+    withGreek?: boolean,
+  ): Promise<VToken> {
+    const decimals = await getDecimals(vToken.strike, this.provider);
+    vToken.strikePrice = this.toFixed(
+      $float(
+        vToken.strikePrice,
+        decimals,
+      )
+    );
+
+    // address
+    if (address) {
+      const position = vToken.position;
+      vToken.position = {
+        amount: this.toFixed($float(position.amount, vToken.decimals)),
+      };
+    }
+
+    // stat
+    if (withStat) {
+      const stat = vToken.stat;
+      vToken.stat = {
+        totalSupply: this.toFixed($float(stat.totalSupply, vToken.decimals)),
+        holder: stat.holder,
+      };
+    }
+
+    // market
+    if (withMarket) {
+      const premium = await this.premium();
+      const market = vToken.market;
+      vToken.market = {
+        changed: this.toPercent(market.changed),
+        volume: this.toFixed(market.volume),
+        bid1: this.toFixed($float(market.bid1, premium.decimals)),
+        bid1IV: this.toFixed(market.bid1IV),
+        ask1: this.toFixed($float(market.ask1, premium.decimals)),
+        ask1IV: this.toFixed(market.ask1IV),
+      };
+    }
+
+    // greek
+    if (withGreek) {
+      const greek = vToken.greek;
+      vToken.greek = {
+        delta: this.toFixed(greek.delta),
+        gamma: this.toFixed(greek.gamma),
+        theta: this.toFixed(greek.theta),
+        vega: this.toFixed(greek.vega),
+        rho: this.toFixed(greek.rho),
+      };
+    }
+    return vToken;
   }
 
   async premium(): Promise<Premium> {
@@ -126,7 +187,7 @@ export class Apis {
     binance: Array<Price>,
   }> {
     const response = await this.apis.post(
-      PriceUrl(hash),
+      ProductPriceUrl(hash),
     );
     const prices = response.data as {
       uniswap: Array<Price>,
@@ -147,7 +208,7 @@ export class Apis {
 
   async expiry(hash: string): Promise<Array<number>> {
     const response = await this.apis.post(
-      ExpiryUrl(hash),
+      ProductExpiryUrl(hash),
     );
     return response.data;
   }
@@ -169,7 +230,7 @@ export class Apis {
     withGreek?: boolean,
   ): Promise<Array<VToken>> {
     const response = await this.apis.post(
-      VTokenUrl(hash),
+      ProductVTokenUrl(hash),
       null,
       {
         params: {
@@ -183,61 +244,36 @@ export class Apis {
     );
     const vTokens = response.data as Array<VToken>;
     return await Promise.all(
-      vTokens.map(
-        async (vToken: VToken) => {
-          const decimals = await getDecimals(vToken.strike, this.provider);
-          vToken.strikePrice = this.toFixed(
-            $float(
-              vToken.strikePrice,
-              decimals,
-            )
-          );
-
-          // address
-          if (address) {
-            const position = vToken.position;
-            vToken.position = {
-              amount: this.toFixed($float(position.amount, vToken.decimals)),
-            };
-          }
-
-          // stat
-          if (withStat) {
-            const stat = vToken.stat;
-            vToken.stat = {
-              totalSupply: this.toFixed($float(stat.totalSupply, vToken.decimals)),
-              holder: stat.holder,
-            };
-          }
-
-          // market
-          if (withMarket) {
-            const premium = await this.premium();
-            const market = vToken.market;
-            vToken.market = {
-              changed: this.toPercent(market.changed),
-              volume: this.toFixed(market.volume),
-              bid1: this.toFixed($float(market.bid1, premium.decimals)),
-              bid1IV: this.toFixed(market.bid1IV),
-              ask1: this.toFixed($float(market.ask1, premium.decimals)),
-              ask1IV: this.toFixed(market.ask1IV),
-            };
-          }
-
-          // greek
-          if (withGreek) {
-            const greek = vToken.greek;
-            vToken.greek = {
-              delta: this.toFixed(greek.delta),
-              gamma: this.toFixed(greek.gamma),
-              theta: this.toFixed(greek.theta),
-              vega: this.toFixed(greek.vega),
-              rho: this.toFixed(greek.rho),
-            };
-          }
-          return vToken;
-        }
-      )
+      vTokens.map(async (vToken: VToken) => this.v(vToken, address, withStat, withMarket, withGreek)),
     );
+  }
+
+  /***
+   * @param contract The vToken contract.
+   * @param address
+   * @param withStat
+   * @param withMarket
+   * @param withGreek
+   */
+  async vToken(
+    contract: string,
+    address?: string,
+    withStat?: boolean,
+    withMarket?: boolean,
+    withGreek?: boolean,
+  ): Promise<VToken> {
+    const response = await this.apis.post(
+      VTokenUrl(contract),
+      null,
+      {
+        params: {
+          address,
+          withStat,
+          withMarket,
+          withGreek,
+        },
+      },
+    );
+    return this.v(response.data as VToken, address, withStat, withMarket, withGreek);
   }
 }

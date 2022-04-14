@@ -45,13 +45,14 @@ const addresses = getContractAddressesForChain(CHAIN_ID);
     const expires = await apis.expiry(hash);
     console.log(expires);
 
-    // const vTokens = await apis.vTokens(hash);
-    // console.log(vTokens);
-
-    JSON.stringify('')
     for (let j = 0; j < expires.length; j++) {
       const vTokens = await apis.vTokens(hash, expires[j], undefined, true, true, true);
       console.log(vTokens);
+
+      for (let k = 0; k < vTokens.length; k++) {
+        const vToken = await apis.vToken(vTokens[k].tokenAddress, undefined, true, true, true);
+        console.log(vToken);
+      }
     }
   }
 })();
