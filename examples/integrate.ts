@@ -58,8 +58,7 @@ const taker = new Wallet(TAKER_PRIVATE_KEY, provider);
       const balance = Number($float((await vTokenContract.balanceOf(maker.address)).toString(), VTOKEN_DECIMALS));
       console.log(balance);
 
-      const optionsAmount = 1;
-      if (balance < optionsAmount) {
+      if (balance <= 0) {
         const short = await volare.short(maker, vTokens[j], 1);
         await short.wait();
       }
@@ -80,7 +79,7 @@ const taker = new Wallet(TAKER_PRIVATE_KEY, provider);
       const order2 = await apis.orderLimit(vTokenContract.address, order.orderHash);
       console.log(order2);
 
-      const tx = await zeroEx.fill(taker, order, 6);
+      const tx = await zeroEx.fill(taker, order2, 6);
       console.log(tx.hash);
     }
   }

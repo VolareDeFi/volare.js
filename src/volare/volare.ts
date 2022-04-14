@@ -18,7 +18,7 @@ import {
   ControllerContract,
 } from '@volare.defi/utils.js';
 
-import { VToken, ActionArgs, ActionType, Vault } from './protocols';
+import { ActionType, VToken, ActionArgs, Vault } from './protocols';
 
 export const VTOKEN_DECIMALS = 8;
 

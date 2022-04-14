@@ -1,5 +1,5 @@
 /**
- * @file orders.ts
+ * @file order.ts
  * @author astra <astra@volare.com>
  * @date 2022
  */
@@ -13,6 +13,21 @@ import {
   createExchangeProxyEIP712Domain,
   getExchangeProxyEIP712Hash,
 } from './eip712';
+
+export enum OrderStatus {
+  Invalid = 0,
+  Fillable = 1,
+  Filled = 2,
+  Cancelled = 3,
+  Expired = 4,
+}
+
+export enum SignatureType {
+  Illegal = 0,
+  Invalid = 1,
+  EIP712 = 2,
+  EthSign = 3,
+}
 
 const COMMON_ORDER_DEFAULT_VALUES = {
   makerToken: ZERO_ADDR,
@@ -37,13 +52,6 @@ const LIMIT_ORDER_DEFAULT_VALUES = {
 export type CommonOrderFields = typeof COMMON_ORDER_DEFAULT_VALUES;
 export type LimitOrderFields = typeof LIMIT_ORDER_DEFAULT_VALUES;
 
-export enum SignatureType {
-  Illegal = 0,
-  Invalid = 1,
-  EIP712 = 2,
-  EthSign = 3,
-}
-
 export interface ECSignature {
   v: number;
   r: string;
@@ -56,16 +64,8 @@ export interface Signature extends ECSignature {
 
 export interface Order {
   orderHash: string;
-  limitOrder: Partial<LimitOrderFields>;
+  limitOrder: LimitOrderFields;
   signature: Signature;
-}
-
-export enum OrderStatus {
-  Invalid = 0,
-  Fillable = 1,
-  Filled = 2,
-  Cancelled = 3,
-  Expired = 4,
 }
 
 export interface OrderInfo {
@@ -126,8 +126,8 @@ export abstract class OrderBase {
   }
 }
 
-export class Orders extends OrderBase {
-  public static readonly STRUCT_NAME = 'Orders';
+export class LimitOrder extends OrderBase {
+  public static readonly STRUCT_NAME = 'LimitOrder';
   public static readonly STRUCT_ABI = [
     { type: 'address', name: 'makerToken' },
     { type: 'address', name: 'takerToken' },
@@ -155,8 +155,8 @@ export class Orders extends OrderBase {
     this.feeRecipient = _fields.feeRecipient;
   }
 
-  public clone(fields: Partial<LimitOrderFields> = {}): Orders {
-    return new Orders({
+  public clone(fields: Partial<LimitOrderFields> = {}): LimitOrder {
+    return new LimitOrder({
       makerToken: this.makerToken,
       takerToken: this.takerToken,
       makerAmount: this.makerAmount,
@@ -179,7 +179,7 @@ export class Orders extends OrderBase {
     return {
       domain: createExchangeProxyEIP712Domain(this.chainId, this.verifyingContract),
       types: {
-        [Orders.STRUCT_NAME]: Orders.STRUCT_ABI,
+        [LimitOrder.STRUCT_NAME]: LimitOrder.STRUCT_ABI,
       },
       message: {
         makerToken: this.makerToken,
@@ -195,7 +195,7 @@ export class Orders extends OrderBase {
         expiry: this.expiry,
         salt: this.salt,
       },
-      primaryType: Orders.STRUCT_NAME,
+      primaryType: LimitOrder.STRUCT_NAME,
     };
   }
 }

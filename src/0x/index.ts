@@ -9,5 +9,5 @@ export {
   getExchangeProxyEIP712DomainHash,
   getExchangeProxyEIP712Hash,
 } from './eip712';
-export { Order } from './orders'
+export { Order } from './orders';
 export { Options as ZeroExOptions, ZeroEx } from './zero-ex';

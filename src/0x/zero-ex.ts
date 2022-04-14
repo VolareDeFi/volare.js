@@ -17,7 +17,7 @@ import {
   IZeroExContract,
 } from '@volare.defi/utils.js';
 
-import { Order, OrderInfo, SignatureType, Orders } from './orders';
+import { SignatureType, LimitOrder, Order, OrderInfo } from './orders';
 
 export interface Options {
   chainId: number;
@@ -125,7 +125,7 @@ export class ZeroEx {
       );
     }
 
-    const limitOrder = new Orders({
+    const limitOrder = new LimitOrder({
       chainId: this.chainId,
       verifyingContract: this.exchangeProxy.address,
       makerToken: this.premiumContract.address,
@@ -173,7 +173,7 @@ export class ZeroEx {
       );
     }
 
-    const limitOrder = new Orders({
+    const limitOrder = new LimitOrder({
       chainId: this.chainId,
       verifyingContract: this.exchangeProxy.address,
       makerToken: this.vTokenContract.address,

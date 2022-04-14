@@ -36,7 +36,6 @@ import {
   VTokenOrderLimitByHashUrl,
   VTokenOrderLimitPutUrl,
 } from './url';
-import {Order as ZeroExOrder} from "../0x";
 
 export interface Options {
   config?: BigNumber.Config;
@@ -339,7 +338,7 @@ export class Apis {
    */
   async orderPutLimit(
     contract: string,
-    order: ZeroExOrder,
+    order: Partial<Order>,
   ): Promise<'OK'> {
     const response = await this.apis.post(
       VTokenOrderLimitPutUrl(contract),
