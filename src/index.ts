@@ -7,7 +7,7 @@
 export { getDecimals } from './cache';
 export { getContractAddressesForChain } from './addresses';
 export { ZeroExOptions, ZeroEx } from './0x';
-export { VolareOptions, Volare } from './volare';
+export { VTOKEN_DECIMALS, VolareOptions, Volare } from './volare';
 export {
   Type,
   Side,

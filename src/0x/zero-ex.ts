@@ -125,7 +125,7 @@ export class ZeroEx {
       );
     }
 
-    const limitOrder = {
+    const limitOrder = new Orders({
       chainId: this.chainId,
       verifyingContract: this.exchangeProxy.address,
       makerToken: this.premiumContract.address,
@@ -138,15 +138,14 @@ export class ZeroEx {
       expiry: String(expiry),
       salt: Date.now().toString(),
       takerTokenFeeAmount: ZERO,
-    };
-    const limitOrder2 = new Orders(limitOrder);
-    const signature = await limitOrder2.getSignatureWithKey(
+    });
+    const signature = await limitOrder.getSignatureWithKey(
       maker,
       SignatureType.EIP712,
     );
 
     return {
-      orderHash: limitOrder2.getHash(),
+      orderHash: limitOrder.getHash(),
       limitOrder,
       signature,
     };
@@ -174,7 +173,7 @@ export class ZeroEx {
       );
     }
 
-    const limitOrder = {
+    const limitOrder = new Orders({
       chainId: this.chainId,
       verifyingContract: this.exchangeProxy.address,
       makerToken: this.vTokenContract.address,
@@ -187,15 +186,14 @@ export class ZeroEx {
       expiry: String(expiry),
       salt: Date.now().toString(),
       takerTokenFeeAmount: ZERO,
-    };
-    const limitOrder2 = new Orders(limitOrder);
-    const signature = await limitOrder2.getSignatureWithKey(
+    });
+    const signature = await limitOrder.getSignatureWithKey(
       maker,
       SignatureType.EIP712,
     );
 
     return {
-      orderHash: limitOrder2.getHash(),
+      orderHash: limitOrder.getHash(),
       limitOrder,
       signature,
     };
