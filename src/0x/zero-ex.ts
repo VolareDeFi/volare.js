@@ -17,7 +17,7 @@ import {
   IZeroExContract,
 } from '@volare.defi/utils.js';
 
-import { SignatureType, LimitOrder, OrderInfo, Order } from './orders';
+import { Order, OrderInfo, SignatureType, Orders } from './orders';
 
 export interface Options {
   chainId: number;
@@ -125,7 +125,7 @@ export class ZeroEx {
       );
     }
 
-    const limitOrder = new LimitOrder({
+    const limitOrder = {
       chainId: this.chainId,
       verifyingContract: this.exchangeProxy.address,
       makerToken: this.premiumContract.address,
@@ -138,14 +138,15 @@ export class ZeroEx {
       expiry: String(expiry),
       salt: Date.now().toString(),
       takerTokenFeeAmount: ZERO,
-    });
-    const signature = await limitOrder.getSignatureWithKey(
+    };
+    const limitOrder2 = new Orders(limitOrder);
+    const signature = await limitOrder2.getSignatureWithKey(
       maker,
       SignatureType.EIP712,
     );
 
     return {
-      orderHash: limitOrder.getHash(),
+      orderHash: limitOrder2.getHash(),
       limitOrder,
       signature,
     };
@@ -173,7 +174,7 @@ export class ZeroEx {
       );
     }
 
-    const limitOrder = new LimitOrder({
+    const limitOrder = {
       chainId: this.chainId,
       verifyingContract: this.exchangeProxy.address,
       makerToken: this.vTokenContract.address,
@@ -186,14 +187,15 @@ export class ZeroEx {
       expiry: String(expiry),
       salt: Date.now().toString(),
       takerTokenFeeAmount: ZERO,
-    });
-    const signature = await limitOrder.getSignatureWithKey(
+    };
+    const limitOrder2 = new Orders(limitOrder);
+    const signature = await limitOrder2.getSignatureWithKey(
       maker,
       SignatureType.EIP712,
     );
 
     return {
-      orderHash: limitOrder.getHash(),
+      orderHash: limitOrder2.getHash(),
       limitOrder,
       signature,
     };

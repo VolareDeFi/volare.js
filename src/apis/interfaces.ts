@@ -4,6 +4,9 @@
  * @date 2022
  */
 
+import { VToken as VolareVToken } from '../volare';
+import { Order as ZeroExOrder } from '../0x';
+
 export interface Price {
   timestamp: number;
   name: string;
@@ -34,20 +37,13 @@ export interface Product {
   underlyingPrice: Price,
 }
 
-export interface VToken {
+export interface VToken extends VolareVToken {
   timestamp: number;
   blockNumber: number;
   productHash: string;
   name: string;
   symbol: string;
   decimals: number;
-  tokenAddress: string;
-  creator: string;
-  underlying: string;
-  strike: string;
-  collateral: string;
-  strikePrice: string;
-  expiry: number;
   position: {
     amount: string;
   }
@@ -70,4 +66,35 @@ export interface VToken {
     vega: string;
     rho: string;
   };
+}
+
+export enum Type {
+  Limit = 1,
+  Market = 2,
+}
+
+export enum Side {
+  Ask = 1,
+  Bid = 2,
+}
+
+export type OrderBook = Array<{
+  side: Side,
+  orderHash: string;
+  ctime: number,
+  price: string;
+  size: string;
+}>
+
+export interface Order extends ZeroExOrder {
+  ctime: number,
+  mtime: number,
+  type: Type,
+  side: Side,
+  expiry: number;
+  fee: string;
+  price: string;
+  amount: string;
+  filled: string;
+  size: string;
 }

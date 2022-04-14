@@ -6,6 +6,17 @@
 
 import { BigNumber } from 'ethers';
 
+export interface VToken {
+  tokenAddress: string;
+  creator: string;
+  underlying: string;
+  strike: string;
+  collateral: string;
+  strikePrice: string;
+  expiry: number;
+  isPut: boolean;
+}
+
 export interface Vault {
   shortVTokens: string[];
   longVTokens: string[];

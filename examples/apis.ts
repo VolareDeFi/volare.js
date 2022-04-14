@@ -1,12 +1,12 @@
 /**
- * @file index.ts
+ * @file apis.ts
  * @author astra <astra@volare.finance>
  * @date 2022
  */
 
 import { config } from 'dotenv';
 import { ChainId } from '@volare.defi/utils.js';
-import { getContractAddressesForChain, Apis } from '../src';
+import { Side, getContractAddressesForChain, Apis } from '../src';
 
 config({
   path: '.env',
@@ -52,6 +52,14 @@ const addresses = getContractAddressesForChain(CHAIN_ID);
       for (let k = 0; k < vTokens.length; k++) {
         const vToken = await apis.vToken(vTokens[k].tokenAddress, undefined, true, true, true);
         console.log(vToken);
+
+        const book = await apis.orderBook(vTokens[k].tokenAddress, Side.Ask);
+        console.log(book);
+
+        for (let l = 0; l < book.length; l++) {
+          const order = await apis.orderLimit(vTokens[k].tokenAddress, book[l].orderHash);
+          console.log(order);
+        }
       }
     }
   }

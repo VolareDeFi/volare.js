@@ -18,8 +18,9 @@ import {
   ControllerContract,
 } from '@volare.defi/utils.js';
 
-import { ActionArgs, ActionType, Vault } from './protocols';
-import { VToken } from '../interfaces';
+import { VToken, ActionArgs, ActionType, Vault } from './protocols';
+
+export const VTOKEN_DECIMALS = 8;
 
 export interface Options {
   chainId: number;
@@ -53,7 +54,7 @@ export class Volare {
   async short(writer: Wallet, vToken: VToken, optionsAmount: number | string): Promise<TransactionResponse> {
     const collateral = new Contract(vToken.collateral, ERC20Contract.ABI(), this.provider);
     const collateralAmount = optionsAmount;
-    const scaledOptionsAmount = $(optionsAmount, vToken.decimals);
+    const scaledOptionsAmount = $(optionsAmount, VTOKEN_DECIMALS);
     const scaledCollateralAmount = $(collateralAmount, await collateral.decimals());
 
     const allowance = await collateral.allowance(await writer.getAddress(), this.marginPool.address);
