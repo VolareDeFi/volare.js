@@ -23,7 +23,7 @@ export interface ERC20 {
   logo: string;
 }
 
-export interface Premium extends ERC20 {}
+export interface Cash extends ERC20 {}
 
 export interface Collateral extends ERC20 {}
 
@@ -66,6 +66,28 @@ export interface VToken extends VolareVToken {
     vega: string;
     rho: string;
   };
+}
+
+export enum LongState {
+  NotExpired = 1,
+  Expired = 2,
+  PartialRedeemed = 3,
+  Redeemed = 4,
+}
+
+export interface Long {
+  vTokenAddress: string;
+  expiry: number;
+  expiryPrice: string;
+  strikePrice: string;
+  address: string;
+  balance: string;
+  redeemedAmount: string;
+  profit: string;
+  roe: string;
+  state: LongState;
+  mtime: number;
+  vaultId?: number;
 }
 
 export enum Type {

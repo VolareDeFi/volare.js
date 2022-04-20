@@ -41,8 +41,8 @@ const taker = new Wallet(TAKER_PRIVATE_KEY, provider);
     addresses: addresses,
   });
 
-  const premium = await apis.premium();
-  const premiumContract = new Contract(premium.address, ERC20Contract.ABI(), provider);
+  const cash = await apis.cash();
+  const premiumContract = new Contract(cash.address, ERC20Contract.ABI(), provider);
   console.log(premiumContract.address);
 
   const products = await apis.products();

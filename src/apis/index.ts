@@ -4,5 +4,5 @@
  * @date 2022
  */
 
-export { Type, Side, ERC20, Premium, Collateral, Product, VToken, Order, OrderBook } from './interfaces';
+export { Type, Side, ERC20, Cash, Collateral, Product, VToken, Order, OrderBook } from './interfaces';
 export { Options as ApisOptions, Apis } from './apis';

@@ -12,7 +12,7 @@ export {
   Type,
   Side,
   ERC20,
-  Premium,
+  Cash,
   Collateral,
   Product,
   VToken,

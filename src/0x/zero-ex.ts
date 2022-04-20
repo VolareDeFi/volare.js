@@ -65,6 +65,22 @@ export class ZeroEx {
     };
   }
 
+  /***
+   * @param maker
+   * @param order
+   */
+  async cancel(maker: Wallet, order: Order): Promise<TransactionResponse> {
+    const limitOrder = order.limitOrder;
+
+    return this.exchangeProxy.connect(maker).cancelLimitOrder(
+      limitOrder,
+      {
+        value: 0,
+        ...TX_DEFAULTS,
+      },
+    );
+  }
+
   /**
    * @param taker The taker wallet.
    * @param order The order.

@@ -17,7 +17,7 @@ config({
 
 const CHAIN_ID = Number(process.env.CHAIN_ID) as ChainId;
 const ENDPOINT = String(process.env.ENDPOINT);
-const WRITER_PRIVATE_KEY = String(process.env.MAKER_PRIVATE_KEY);
+const WRITER_PRIVATE_KEY = String(process.env.TAKER_PRIVATE_KEY);
 
 const URL = 'https://dev.api.dex-browser.com/';
 const addresses = getContractAddressesForChain(CHAIN_ID);
@@ -44,7 +44,7 @@ const writer = new Wallet(WRITER_PRIVATE_KEY, provider);
     const vTokens = await apis.vTokens(products[i].productHash);
     for (let j = 0; j < vTokens.length; j++) {
       const vToken = new Contract(vTokens[j].tokenAddress, VTokenContract.ABI(), provider);
-      const optionsAmount = j + 1;
+      const optionsAmount = 1;
 
       console.log(await vToken.balanceOf(await writer.getAddress()));
       const short = await volare.short(writer, vTokens[j], optionsAmount);

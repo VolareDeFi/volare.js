@@ -13,6 +13,8 @@ import {
   $,
   VolareAddresses,
   ERC20Contract,
+  OracleContract,
+  VTokenContract,
   WhitelistContract,
   MarginPoolContract,
   ControllerContract,
@@ -31,18 +33,38 @@ export interface Options {
 export class Volare {
   chainId: number;
   provider: providers.JsonRpcProvider;
-  address: string;
+  oracleContract: Contract;
   whitelistContract: Contract;
-  marginPool: Contract;
-  controller: Contract;
+  marginPoolContract: Contract;
+  controllerContract: Contract;
 
   constructor(options: Options) {
     this.chainId = options.chainId;
     this.provider = new providers.JsonRpcProvider(options.endpoint);
-    this.address = options.addresses.controller;
+    this.oracleContract = new Contract(options.addresses.mockOracle, OracleContract.ABI(), this.provider);
     this.whitelistContract = new Contract(options.addresses.whitelist, WhitelistContract.ABI(), this.provider);
-    this.marginPool = new Contract(options.addresses.marginPool, MarginPoolContract.ABI(), this.provider);
-    this.controller = new Contract(options.addresses.controller, ControllerContract.ABI(), this.provider);
+    this.marginPoolContract = new Contract(options.addresses.marginPool, MarginPoolContract.ABI(), this.provider);
+    this.controllerContract = new Contract(options.addresses.controller, ControllerContract.ABI(), this.provider);
+  }
+
+  async getExpiryPrice(asset: string, expiry: number): Promise<[string, boolean]> {
+    const [price, isFinalized] = await this.oracleContract.getExpiryPrice(asset, expiry);
+    return [price.toString(), isFinalized];
+  }
+
+  async isDisputePeriodOver(asset: string, expiry: number): Promise<boolean> {
+    return this.oracleContract.isDisputePeriodOver(asset, expiry);
+  }
+
+  /***
+   *
+   * @param vTokenAddress
+   * @returns [collateral, underlying, strike, expiry, strikePrice, isPut]
+   */
+  async getVTokenDetails(vTokenAddress: string): Promise<[string, string, string, string, number, boolean]> {
+    const vTokenContract = new Contract(vTokenAddress, VTokenContract.ABI(), this.provider);
+    const [collateral, underlying, strike, strikePrice, expiry, isPut] = await vTokenContract.getVTokenDetails();
+    return [collateral, underlying, strike, strikePrice.toString(), expiry.toNumber(), isPut];
   }
 
   /***
@@ -52,46 +74,80 @@ export class Volare {
    * @param optionsAmount The options amount with decimals, e.x. 10.0
    */
   async short(writer: Wallet, vToken: VToken, optionsAmount: number | string): Promise<TransactionResponse> {
-    const collateral = new Contract(vToken.collateral, ERC20Contract.ABI(), this.provider);
+    const collateralContract = new Contract(vToken.collateral, ERC20Contract.ABI(), this.provider);
     const collateralAmount = optionsAmount;
     const scaledOptionsAmount = $(optionsAmount, VTOKEN_DECIMALS);
-    const scaledCollateralAmount = $(collateralAmount, await collateral.decimals());
+    const scaledCollateralAmount = $(collateralAmount, await collateralContract.decimals());
 
-    const allowance = await collateral.allowance(await writer.getAddress(), this.marginPool.address);
+    const allowance = await collateralContract.allowance(await writer.getAddress(), this.marginPoolContract.address);
     if (allowance.lt(scaledCollateralAmount)) {
-      await collateral.connect(writer).approve(
-        this.marginPool.address,
+      await collateralContract.connect(writer).approve(
+        this.marginPoolContract.address,
         ONE_BYTES32,
         {
           ...TX_DEFAULTS,
         },
       );
     }
-    return this.mintShortOption(
+    return this.shortOptionOp(
       writer,
       vToken.tokenAddress,
-      collateral.address,
+      collateralContract.address,
       scaledOptionsAmount,
       scaledCollateralAmount,
     );
   }
 
+  async redeem(holder: Wallet, vToken: VToken, optionsAmount: number | string): Promise<TransactionResponse> {
+    const scaledOptionsAmount = $(optionsAmount, VTOKEN_DECIMALS);
+
+    return this.redeemOp(
+      holder,
+      vToken.tokenAddress,
+      scaledOptionsAmount,
+    );
+  }
+
   async settle(writer: Wallet, vaultId: number): Promise<TransactionResponse> {
-    return this.settleVault(
+    return this.settleVaultOp(
       writer,
       vaultId,
     );
   }
 
   async getAccountVaultCounter(owner: string): Promise<number> {
-    return (await this.controller.getAccountVaultCounter(owner)).toNumber();
+    return (await this.controllerContract.getAccountVaultCounter(owner)).toNumber();
   }
 
   async getVaultWithDetails(owner: string, vaultId: number | string): Promise<[Vault, string, string]> {
-    return this.controller.getVaultWithDetails(owner, vaultId);
+    return this.controllerContract.getVaultWithDetails(owner, vaultId);
   }
 
-  private async settleVault(
+  private async redeemOp(
+    owner: Wallet,
+    vTokenAddress: string,
+    scaledOptionsAmount: string,
+  ): Promise<TransactionResponse> {
+    const ownerAddress = await owner.getAddress();
+    const actionArgs: Array<ActionArgs> = [
+      {
+        actionType: ActionType.Redeem,
+        owner: ownerAddress,
+        secondAddress: ownerAddress,
+        asset: vTokenAddress,
+        vaultId: 0,
+        amount: scaledOptionsAmount,
+        index: '0',
+        data: ZERO_ADDR,
+      }
+    ];
+
+    return this.controllerContract.connect(owner).operate(actionArgs, {
+      ...TX_DEFAULTS,
+    });
+  }
+
+  private async settleVaultOp(
     owner: Wallet,
     vaultId: number,
   ): Promise<TransactionResponse> {
@@ -109,12 +165,12 @@ export class Volare {
       }
     ];
 
-    return this.controller.connect(owner).operate(actionArgs, {
+    return this.controllerContract.connect(owner).operate(actionArgs, {
       ...TX_DEFAULTS,
     });
   }
 
-  private async mintShortOption(
+  private async shortOptionOp(
     owner: Wallet,
     vTokenAddress: string,
     assetAddress: string,
@@ -156,7 +212,7 @@ export class Volare {
       },
     ];
 
-    return this.controller.connect(owner).operate(actionArgs, {
+    return this.controllerContract.connect(owner).operate(actionArgs, {
       ...TX_DEFAULTS,
     });
   }

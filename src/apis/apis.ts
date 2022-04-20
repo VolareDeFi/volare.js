@@ -13,21 +13,22 @@ import {
 } from '@volare.defi/utils.js';
 
 import { VTOKEN_DECIMALS } from '../volare';
-import { KeyPremium, global, getDecimals } from '../cache';
+import { KeyCash, global, getDecimals } from '../cache';
 import {
   Side,
   Price,
-  Premium,
+  Cash,
   Collateral,
   Product,
   VToken,
+  Long,
   OrderBook,
   Order,
 } from './interfaces';
 import {
-  PremiumUrl,
-  CollateralUrl,
-  ProductUrl,
+  CashUrl,
+  WhitelistCollateralUrl,
+  WhitelistProductUrl,
   ProductPriceUrl,
   ProductExpiryUrl,
   ProductVTokenUrl,
@@ -35,6 +36,7 @@ import {
   VTokenOrderBookUrl,
   VTokenOrderLimitByHashUrl,
   VTokenOrderLimitPutUrl,
+  VTokenAllLongUrl,
 } from './url';
 
 export interface Options {
@@ -112,14 +114,14 @@ export class Apis {
 
     // market
     if (withMarket) {
-      const premium = await this.premium();
+      const cash = await this.cash();
       const market = vToken.market;
       vToken.market = {
         changed: this.toPercent(market.changed),
         volume: this.toFixed(market.volume),
-        bid1: this.toFixed($float(market.bid1, premium.decimals)),
+        bid1: this.toFixed($float(market.bid1, cash.decimals)),
         bid1IV: this.toFixed(market.bid1IV),
-        ask1: this.toFixed($float(market.ask1, premium.decimals)),
+        ask1: this.toFixed($float(market.ask1, cash.decimals)),
         ask1IV: this.toFixed(market.ask1IV),
       };
     }
@@ -139,32 +141,32 @@ export class Apis {
   }
 
   private async o(order: Order): Promise<Order> {
-    const premium = await this.premium();
-    order.fee = this.toFixed($float(order.fee, premium.decimals));
-    order.price = this.toFixed($float(order.price, premium.decimals));
+    const cash = await this.cash();
+    order.fee = this.toFixed($float(order.fee, cash.decimals));
+    order.price = this.toFixed($float(order.price, cash.decimals));
     order.amount = this.toFixed($float(order.amount, VTOKEN_DECIMALS));
     order.filled = this.toFixed($float(order.filled, VTOKEN_DECIMALS));
     order.size = this.toFixed($float(order.size, VTOKEN_DECIMALS));
     return order;
   }
 
-  async premium(): Promise<Premium> {
-    if (global[KeyPremium]) return global[KeyPremium] as Premium;
+  async cash(): Promise<Cash> {
+    if (global[KeyCash]) return global[KeyCash] as Cash;
 
     const response = await this.apis.get(
-      PremiumUrl(this.addresses.controller),
+      CashUrl(),
     );
-    const premium = response.data as Premium;
-    premium.totalSupply = this.toFixed($float(premium.totalSupply, premium.decimals));
+    const cash = response.data as Cash;
+    cash.totalSupply = this.toFixed($float(cash.totalSupply, cash.decimals));
 
-    global[KeyPremium] = premium;
+    global[KeyCash] = cash;
 
-    return premium;
+    return cash;
   }
 
   async collaterals(): Promise<Array<Collateral>> {
     const response = await this.apis.post(
-      CollateralUrl(this.addresses.controller),
+      WhitelistCollateralUrl(this.addresses.whitelist),
     );
     const collaterals = response.data as Array<Collateral>;
     return collaterals.map(collateral => {
@@ -176,7 +178,7 @@ export class Apis {
   async products(withPrice = false): Promise<Array<Product>> {
     const params = withPrice ? { withPrice } : undefined;
     const response = await this.apis.post(
-      ProductUrl(this.addresses.controller),
+      WhitelistProductUrl(this.addresses.whitelist),
       null,
       {
         params,
@@ -294,6 +296,41 @@ export class Apis {
     return this.v(response.data as VToken, address, withStat, withMarket, withGreek);
   }
 
+  async longs(
+    address?: string,
+    isExpired?: boolean,
+    isRedeemed?: boolean,
+  ): Promise<Array<Long>> {
+    const response = await this.apis.post(
+      VTokenAllLongUrl(),
+      null,
+      {
+        params: {
+          address,
+          isExpired,
+          isRedeemed,
+        },
+      },
+    );
+    const longs = response.data as Array<any>;
+    return await Promise.all(
+      longs.map(async (long) => {
+        const vToken = await this.vToken(long.vTokenAddress);
+        const strikeDecimals = await getDecimals(vToken.strike, this.provider);
+        const collateralDecimals = await getDecimals(vToken.collateral, this.provider);
+
+        long.expiryPrice = this.toFixed($float(long.fixingPrice, strikeDecimals));
+        long.strikePrice = this.toFixed($float(long.strikePrice, strikeDecimals));
+        long.balance = this.toFixed($float(long.balance, VTOKEN_DECIMALS));
+        long.redeemedAmount = this.toFixed($float(long.burnedSize, VTOKEN_DECIMALS));
+        long.profit = this.toFixed($float(long.exerciseProfit, collateralDecimals));
+        long.roe = this.toPercent(long.roe);
+        long.mtime = long.redeemedTimestamp;
+        return long;
+      }),
+    );
+  }
+
   async orderBook(
     contract: string,
     side: Side,
@@ -310,8 +347,8 @@ export class Apis {
     const book = response.data as OrderBook;
     return await Promise.all(
       book.map(async (page) => {
-        const premium = await this.premium();
-        page.price = this.toFixed($float(page.price, premium.decimals))
+        const cash = await this.cash();
+        page.price = this.toFixed($float(page.price, cash.decimals))
         page.size = this.toFixed($float(page.size, VTOKEN_DECIMALS));
         return page;
       }),
@@ -326,7 +363,7 @@ export class Apis {
     contract: string,
     hash: string,
   ): Promise<Order> {
-    const response = await this.apis.post(
+    const response = await this.apis.get(
       VTokenOrderLimitByHashUrl(contract, hash),
     );
     return this.o(response.data as Order);
