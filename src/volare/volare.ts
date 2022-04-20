@@ -56,6 +56,10 @@ export class Volare {
     return this.oracleContract.isDisputePeriodOver(asset, expiry);
   }
 
+  async getStoredBalance(asset: string): Promise<string> {
+    return (await this.marginPoolContract.getStoredBalance(asset)).toString();
+  }
+
   /***
    *
    * @param vTokenAddress
