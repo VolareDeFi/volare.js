@@ -12,7 +12,7 @@ import {
   VolareAddresses,
 } from '@volare.defi/utils.js';
 
-import { VTOKEN_DECIMALS } from '../volare';
+import { STRIKE_DECIMALS, VTOKEN_DECIMALS } from '../volare';
 import { KeyCash, global, getDecimals } from '../cache';
 import {
   Side,
@@ -36,6 +36,7 @@ import {
   VTokenOrderBookUrl,
   VTokenOrderLimitByHashUrl,
   VTokenOrderLimitPutUrl,
+  VTokenAllShortUrl,
   VTokenAllLongUrl,
 } from './url';
 
@@ -87,11 +88,10 @@ export class Apis {
     withMarket?: boolean,
     withGreek?: boolean,
   ): Promise<VToken> {
-    const decimals = await getDecimals(vToken.strike, this.provider);
     vToken.strikePrice = this.toFixed(
       $float(
         vToken.strikePrice,
-        decimals,
+        STRIKE_DECIMALS,
       )
     );
 
@@ -296,6 +296,25 @@ export class Apis {
     return this.v(response.data as VToken, address, withStat, withMarket, withGreek);
   }
 
+  async shorts(
+    address?: string,
+    isExpired?: boolean,
+    isSettled?: boolean,
+  ): Promise<any> {
+    const response = await this.apis.post(
+      VTokenAllShortUrl(),
+      null,
+      {
+        params: {
+          address,
+          isExpired,
+          isSettled,
+        },
+      },
+    );
+    return response.data;
+  }
+
   async longs(
     address?: string,
     isExpired?: boolean,
@@ -316,11 +335,10 @@ export class Apis {
     return await Promise.all(
       longs.map(async (long) => {
         const vToken = await this.vToken(long.vTokenAddress);
-        const strikeDecimals = await getDecimals(vToken.strike, this.provider);
         const collateralDecimals = await getDecimals(vToken.collateral, this.provider);
 
-        long.expiryPrice = this.toFixed($float(long.fixingPrice, strikeDecimals));
-        long.strikePrice = this.toFixed($float(long.strikePrice, strikeDecimals));
+        long.expiryPrice = this.toFixed($float(long.fixingPrice, STRIKE_DECIMALS));
+        long.strikePrice = this.toFixed($float(long.strikePrice, STRIKE_DECIMALS));
         long.balance = this.toFixed($float(long.balance, VTOKEN_DECIMALS));
         long.redeemedAmount = this.toFixed($float(long.burnedSize, VTOKEN_DECIMALS));
         long.profit = this.toFixed($float(long.exerciseProfit, collateralDecimals));

@@ -5,4 +5,4 @@
  */
 
 export { ActionType, VToken, Vault, ActionArgs } from './protocols';
-export { VTOKEN_DECIMALS, Options as VolareOptions, Volare } from './volare';
+export { VTOKEN_DECIMALS, STRIKE_DECIMALS, Options as VolareOptions, Volare } from './volare';

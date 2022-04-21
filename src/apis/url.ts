@@ -15,3 +15,4 @@ export const VTokenOrderBookUrl = (contract: string) =>`/eth/volare/vTokens/${co
 export const VTokenOrderLimitByHashUrl = (contract: string, hash: string) =>`/eth/volare/vTokens/${contract}/orders/limits/${hash}`;
 export const VTokenOrderLimitPutUrl = (contract: string) =>`/eth/volare/vTokens/${contract}/orders/limits/put`;
 export const VTokenAllLongUrl = () => `/eth/volare/vTokens/long`;
+export const VTokenAllShortUrl = () => `/eth/volare/vTokens/short`;

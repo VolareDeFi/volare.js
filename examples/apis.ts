@@ -4,7 +4,6 @@
  * @date 2022
  */
 
-// import { Wallet } from 'ethers';
 import { config } from 'dotenv';
 import { ChainId } from '@volare.defi/utils.js';
 import { Side, getContractAddressesForChain, Apis } from '../src';
@@ -17,10 +16,8 @@ config({
 const URL = 'https://dev.api.dex-browser.com/';
 const CHAIN_ID = Number(process.env.CHAIN_ID) as ChainId;
 const ENDPOINT = String(process.env.ENDPOINT);
-// const TAKER_PRIVATE_KEY = String(process.env.TAKER_PRIVATE_KEY);
 
 const addresses = getContractAddressesForChain(CHAIN_ID);
-// const holder = new Wallet(TAKER_PRIVATE_KEY);
 
 (async () => {
   const apis = new Apis({
@@ -68,5 +65,8 @@ const addresses = getContractAddressesForChain(CHAIN_ID);
 
     const longs = await apis.longs();
     console.log(longs);
+
+    const shorts = await apis.shorts();
+    console.log(shorts);
   }
 })();

@@ -1,5 +1,5 @@
 /**
- * @file short.ts
+ * @file short.put.ts
  * @author astra <astra@volare.finance>
  * @date 2022
  */
@@ -17,7 +17,7 @@ config({
 
 const CHAIN_ID = Number(process.env.CHAIN_ID) as ChainId;
 const ENDPOINT = String(process.env.ENDPOINT);
-const WRITER_PRIVATE_KEY = String(process.env.TAKER_PRIVATE_KEY);
+const WRITER_PRIVATE_KEY = String(process.env.MAKER_PRIVATE_KEY);
 
 const URL = 'https://dev.api.dex-browser.com/';
 const addresses = getContractAddressesForChain(CHAIN_ID);
@@ -29,7 +29,7 @@ const writer = new Wallet(WRITER_PRIVATE_KEY, provider);
     url: URL,
     chainId: CHAIN_ID,
     endpoint: ENDPOINT,
-    addresses: addresses as VolareAddresses,
+    addresses: addresses,
   });
   const volare = new Volare({
     chainId: CHAIN_ID,
@@ -40,16 +40,15 @@ const writer = new Wallet(WRITER_PRIVATE_KEY, provider);
   const products = await apis.products();
   console.log(products);
 
-  for (let i = 0; i < products.length; i++) {
-    const vTokens = await apis.vTokens(products[i].productHash);
-    for (let j = 0; j < vTokens.length; j++) {
-      const vToken = new Contract(vTokens[j].tokenAddress, VTokenContract.ABI(), provider);
-      const optionsAmount = 1;
+  const vToken = await apis.vToken('0xcc4316ae42c40b5f6520f02764c0d857e8855461');
+  console.log(await volare.isWhitelistedVToken(vToken.tokenAddress));
+  console.log(await volare.getVTokenDetails(vToken.tokenAddress));
 
-      console.log(await vToken.balanceOf(await writer.getAddress()));
-      const short = await volare.short(writer, vTokens[j], optionsAmount);
-      await short.wait();
-      console.log(await vToken.balanceOf(await writer.getAddress()));
-    }
-  }
+  const vTokenContract = new Contract(vToken.tokenAddress, VTokenContract.ABI(), provider);
+  const optionsAmount = 0.01;
+
+  console.log(await vTokenContract.balanceOf(await writer.getAddress()));
+  const short = await volare.short(writer, vToken, optionsAmount);
+  await short.wait();
+  console.log(await vTokenContract.balanceOf(await writer.getAddress()));
 })();

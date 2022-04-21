@@ -9,20 +9,26 @@ import { TransactionResponse } from '@ethersproject/providers';
 import {
   ONE_BYTES32,
   ZERO_ADDR,
-  TX_DEFAULTS,
   $,
   VolareAddresses,
   ERC20Contract,
   OracleContract,
   VTokenContract,
   WhitelistContract,
+  MarginCalculatorContract,
   MarginPoolContract,
   ControllerContract,
 } from '@volare.defi/utils.js';
 
 import { ActionType, VToken, ActionArgs, Vault } from './protocols';
 
+const TX_DEFAULTS = {
+  gasLimit: 8000000,
+  gasPrice: 300e9,
+};
+
 export const VTOKEN_DECIMALS = 8;
+export const STRIKE_DECIMALS = 8;
 
 export interface Options {
   chainId: number;
@@ -35,6 +41,7 @@ export class Volare {
   provider: providers.JsonRpcProvider;
   oracleContract: Contract;
   whitelistContract: Contract;
+  marginCalculatorContract: Contract;
   marginPoolContract: Contract;
   controllerContract: Contract;
 
@@ -43,8 +50,13 @@ export class Volare {
     this.provider = new providers.JsonRpcProvider(options.endpoint);
     this.oracleContract = new Contract(options.addresses.mockOracle, OracleContract.ABI(), this.provider);
     this.whitelistContract = new Contract(options.addresses.whitelist, WhitelistContract.ABI(), this.provider);
+    this.marginCalculatorContract = new Contract(options.addresses.marginCalculator, MarginCalculatorContract.ABI(), this.provider);
     this.marginPoolContract = new Contract(options.addresses.marginPool, MarginPoolContract.ABI(), this.provider);
     this.controllerContract = new Contract(options.addresses.controller, ControllerContract.ABI(), this.provider);
+  }
+
+  async isWhitelistedVToken(vToken: string): Promise<boolean> {
+    return this.whitelistContract.isWhitelistedVToken(vToken);
   }
 
   async getExpiryPrice(asset: string, expiry: number): Promise<[string, boolean]> {
@@ -79,7 +91,7 @@ export class Volare {
    */
   async short(writer: Wallet, vToken: VToken, optionsAmount: number | string): Promise<TransactionResponse> {
     const collateralContract = new Contract(vToken.collateral, ERC20Contract.ABI(), this.provider);
-    const collateralAmount = optionsAmount;
+    const collateralAmount = vToken.isPut ? (Number(vToken.strikePrice) * Number(optionsAmount)) : optionsAmount;
     const scaledOptionsAmount = $(optionsAmount, VTOKEN_DECIMALS);
     const scaledCollateralAmount = $(collateralAmount, await collateralContract.decimals());
 
@@ -123,8 +135,18 @@ export class Volare {
     return (await this.controllerContract.getAccountVaultCounter(owner)).toNumber();
   }
 
-  async getVaultWithDetails(owner: string, vaultId: number | string): Promise<[Vault, string, string]> {
+  /***
+   *
+   * @param owner
+   * @param vaultId
+   * @returns [Vault, vaultType, vaultLatestUpdate]
+   */
+  async getVaultWithDetails(owner: string, vaultId: number | string): Promise<[Vault, any, any]> {
     return this.controllerContract.getVaultWithDetails(owner, vaultId);
+  }
+
+  async getExcessCollateral(vault: Vault, vaultType: any): Promise<any> {
+    return this.marginCalculatorContract.getExcessCollateral(vault, vaultType);
   }
 
   private async redeemOp(
@@ -146,9 +168,12 @@ export class Volare {
       }
     ];
 
-    return this.controllerContract.connect(owner).operate(actionArgs, {
-      ...TX_DEFAULTS,
-    });
+    return this.controllerContract.connect(owner).operate(
+      actionArgs,
+      {
+        ...TX_DEFAULTS,
+      },
+    );
   }
 
   private async settleVaultOp(
@@ -169,9 +194,12 @@ export class Volare {
       }
     ];
 
-    return this.controllerContract.connect(owner).operate(actionArgs, {
-      ...TX_DEFAULTS,
-    });
+    return this.controllerContract.connect(owner).operate(
+      actionArgs,
+      {
+        ...TX_DEFAULTS,
+      },
+    );
   }
 
   private async shortOptionOp(
@@ -216,8 +244,11 @@ export class Volare {
       },
     ];
 
-    return this.controllerContract.connect(owner).operate(actionArgs, {
-      ...TX_DEFAULTS,
-    });
+    return this.controllerContract.connect(owner).operate(
+      actionArgs,
+      {
+        ...TX_DEFAULTS,
+      },
+    );
   }
 }
