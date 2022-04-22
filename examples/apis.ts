@@ -7,6 +7,7 @@
 import { config } from 'dotenv';
 import { ChainId } from '@volare.defi/utils.js';
 import { Side, getContractAddressesForChain, Apis } from '../src';
+import {Wallet} from "ethers";
 
 config({
   path: '.env',
@@ -16,8 +17,10 @@ config({
 const URL = 'https://dev.api.dex-browser.com/';
 const CHAIN_ID = Number(process.env.CHAIN_ID) as ChainId;
 const ENDPOINT = String(process.env.ENDPOINT);
+const WRITER_PRIVATE_KEY = String(process.env.MAKER_PRIVATE_KEY);
 
 const addresses = getContractAddressesForChain(CHAIN_ID);
+const writer = new Wallet(WRITER_PRIVATE_KEY);
 
 (async () => {
   const apis = new Apis({
@@ -66,7 +69,7 @@ const addresses = getContractAddressesForChain(CHAIN_ID);
     const longs = await apis.longs();
     console.log(longs);
 
-    const shorts = await apis.shorts();
+    const shorts = await apis.shorts(writer.address);
     console.log(shorts);
   }
 })();

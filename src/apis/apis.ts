@@ -21,6 +21,7 @@ import {
   Collateral,
   Product,
   VToken,
+  Short,
   Long,
   OrderBook,
   Order,
@@ -300,7 +301,7 @@ export class Apis {
     address?: string,
     isExpired?: boolean,
     isSettled?: boolean,
-  ): Promise<any> {
+  ): Promise<Array<Short>> {
     const response = await this.apis.post(
       VTokenAllShortUrl(),
       null,
@@ -312,7 +313,24 @@ export class Apis {
         },
       },
     );
-    return response.data;
+    const shorts = response.data as Array<any>;
+    return await Promise.all(
+      shorts.map(async (short) => {
+        const vToken = await this.vToken(short.vTokenAddress);
+        const collateralDecimals = await getDecimals(vToken.collateral, this.provider);
+
+        short.collateralAmount = this.toFixed($float(short.collateralAmount, collateralDecimals));
+        short.collateralRate = this.toPercent(short.collateralRate);
+        short.expiryPrice = this.toFixed($float(short.fixingPrice, STRIKE_DECIMALS));
+        short.strikePrice = this.toFixed($float(short.strikePrice, STRIKE_DECIMALS));
+        short.amount = this.toFixed($float(short.amount, VTOKEN_DECIMALS));
+        short.balance = this.toFixed($float(short.balance, VTOKEN_DECIMALS));
+        short.profit = this.toFixed($float(short.exerciseProfit, collateralDecimals));
+        short.roe = this.toPercent(short.roe);
+        short.mtime = short.settledTimestamp;
+        return short;
+      }),
+    );
   }
 
   async longs(

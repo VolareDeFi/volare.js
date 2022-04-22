@@ -68,11 +68,36 @@ export interface VToken extends VolareVToken {
   };
 }
 
+export enum ShortState {
+  NotExpired = 1,
+  Expired = 2,
+  PartialSettled = 3,
+  Settled = 4,
+}
+
 export enum LongState {
   NotExpired = 1,
   Expired = 2,
   PartialRedeemed = 3,
   Redeemed = 4,
+}
+
+export interface Short {
+  vTokenAddress: string;
+  collateralAddress: string;
+  collateralAmount: string;
+  collateralRate: string;
+  expiry: number;
+  expiryPrice: string;
+  strikePrice: string;
+  address: string;
+  amount: string;
+  balance: string;
+  profit: string;
+  roe: string;
+  state: ShortState;
+  mtime: number;
+  vaultId: number;
 }
 
 export interface Long {

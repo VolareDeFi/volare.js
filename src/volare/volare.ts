@@ -9,7 +9,7 @@ import { TransactionResponse } from '@ethersproject/providers';
 import {
   ONE_BYTES32,
   ZERO_ADDR,
-  $,
+  $, $float,
   VolareAddresses,
   ERC20Contract,
   OracleContract,
@@ -81,6 +81,17 @@ export class Volare {
     const vTokenContract = new Contract(vTokenAddress, VTokenContract.ABI(), this.provider);
     const [collateral, underlying, strike, strikePrice, expiry, isPut] = await vTokenContract.getVTokenDetails();
     return [collateral, underlying, strike, strikePrice.toString(), expiry.toNumber(), isPut];
+  }
+
+  /***
+   *
+   * @param vTokenAddress
+   * @param owner
+   * @returns balance
+   */
+  async balanceOf(vTokenAddress: string, owner: string): Promise<string> {
+    const vTokenContract = new Contract(vTokenAddress, VTokenContract.ABI(), this.provider);
+    return $float(await vTokenContract.balanceOf(owner), VTOKEN_DECIMALS);
   }
 
   /***
